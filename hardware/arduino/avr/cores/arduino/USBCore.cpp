@@ -78,12 +78,21 @@ const u8 STRING_MANUFACTURER[] PROGMEM = USB_MANUFACTURER;
 #define DEVICE_CLASS 0x00
 #endif
 
+#if defined(LOW_SPEED_USB)
+//	DEVICE DESCRIPTOR
+const DeviceDescriptor USB_DeviceDescriptor =
+	D_DEVICE(0x00,0x00,0x00,8,USB_VID,USB_PID,0x100,IMANUFACTURER,IPRODUCT,0,1);
+
+const DeviceDescriptor USB_DeviceDescriptorA =
+	D_DEVICE(DEVICE_CLASS,0x00,0x00,8,USB_VID,USB_PID,0x100,IMANUFACTURER,IPRODUCT,0,1);
+#else
 //	DEVICE DESCRIPTOR
 const DeviceDescriptor USB_DeviceDescriptor =
 	D_DEVICE(0x00,0x00,0x00,64,USB_VID,USB_PID,0x100,IMANUFACTURER,IPRODUCT,0,1);
 
 const DeviceDescriptor USB_DeviceDescriptorA =
 	D_DEVICE(DEVICE_CLASS,0x00,0x00,64,USB_VID,USB_PID,0x100,IMANUFACTURER,IPRODUCT,0,1);
+#endif
 
 //==================================================================
 //==================================================================
@@ -394,7 +403,11 @@ bool SendControl(u8 d)
 		if (!WaitForINOrOUT())
 			return false;
 		Send8(d);
+#if defined(LOW_SPEED_USB)
+		if (!((_cmark + 1) & 0x07))
+#else
 		if (!((_cmark + 1) & 0x3F))
+#endif
 			ClearIN();	// Fifo is full, release this packet
 	}
 	_cmark++;
@@ -676,7 +689,11 @@ void USBDevice_::attach()
 
 	USBCON = ((1<<USBE)|(1<<OTGPADE));	// start USB clock
 	UDIEN = (1<<EORSTE)|(1<<SOFE);		// Enable interrupts for EOR (End of Reset) and SOF (start of frame)
+#if defined(LOW_SPEED_USB)
+	UDCON = (1<<LSM);							// enable attach resistor
+#else
 	UDCON = 0;							// enable attach resistor
+#endif
 	
 	TX_RX_LED_INIT;
 }

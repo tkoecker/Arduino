@@ -43,42 +43,12 @@ Keyboard_ Keyboard;
 
 extern const u8 _hidReportDescriptor[] PROGMEM;
 const u8 _hidReportDescriptor[] = {
-	
-	//	Mouse
-    0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)	// 54
-    0x09, 0x02,                    // USAGE (Mouse)
-    0xa1, 0x01,                    // COLLECTION (Application)
-    0x09, 0x01,                    //   USAGE (Pointer)
-    0xa1, 0x00,                    //   COLLECTION (Physical)
-    0x85, 0x01,                    //     REPORT_ID (1)
-    0x05, 0x09,                    //     USAGE_PAGE (Button)
-    0x19, 0x01,                    //     USAGE_MINIMUM (Button 1)
-    0x29, 0x03,                    //     USAGE_MAXIMUM (Button 3)
-    0x15, 0x00,                    //     LOGICAL_MINIMUM (0)
-    0x25, 0x01,                    //     LOGICAL_MAXIMUM (1)
-    0x95, 0x03,                    //     REPORT_COUNT (3)
-    0x75, 0x01,                    //     REPORT_SIZE (1)
-    0x81, 0x02,                    //     INPUT (Data,Var,Abs)
-    0x95, 0x01,                    //     REPORT_COUNT (1)
-    0x75, 0x05,                    //     REPORT_SIZE (5)
-    0x81, 0x03,                    //     INPUT (Cnst,Var,Abs)
-    0x05, 0x01,                    //     USAGE_PAGE (Generic Desktop)
-    0x09, 0x30,                    //     USAGE (X)
-    0x09, 0x31,                    //     USAGE (Y)
-    0x09, 0x38,                    //     USAGE (Wheel)
-    0x15, 0x81,                    //     LOGICAL_MINIMUM (-127)
-    0x25, 0x7f,                    //     LOGICAL_MAXIMUM (127)
-    0x75, 0x08,                    //     REPORT_SIZE (8)
-    0x95, 0x03,                    //     REPORT_COUNT (3)
-    0x81, 0x06,                    //     INPUT (Data,Var,Rel)
-    0xc0,                          //   END_COLLECTION
-    0xc0,                          // END_COLLECTION
 
 	//	Keyboard
     0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)	// 47
     0x09, 0x06,                    // USAGE (Keyboard)
     0xa1, 0x01,                    // COLLECTION (Application)
-    0x85, 0x02,                    //   REPORT_ID (2)
+//    0x85, 0x02,                    //   REPORT_ID (2)
     0x05, 0x07,                    //   USAGE_PAGE (Keyboard)
    
 	0x19, 0xe0,                    //   USAGE_MINIMUM (Keyboard LeftControl)
@@ -124,14 +94,15 @@ const u8 _hidReportDescriptor[] = {
 	0x91, 0x02,				// Output (array)
 	0xC0					// end collection
 #endif
+
 };
 
 extern const HIDDescriptor _hidInterface PROGMEM;
 const HIDDescriptor _hidInterface =
 {
-	D_INTERFACE(HID_INTERFACE,1,3,0,0),
+	D_INTERFACE(HID_INTERFACE,1,3,1,1),
 	D_HIDREPORT(sizeof(_hidReportDescriptor)),
-	D_ENDPOINT(USB_ENDPOINT_IN (HID_ENDPOINT_INT),USB_ENDPOINT_TYPE_INTERRUPT,0x40,0x01)
+	D_ENDPOINT(USB_ENDPOINT_IN (HID_ENDPOINT_INT),USB_ENDPOINT_TYPE_INTERRUPT,8,10)
 };
 
 //================================================================================
@@ -156,7 +127,7 @@ int WEAK HID_GetDescriptor(int /* i */)
 
 void WEAK HID_SendReport(u8 id, const void* data, int len)
 {
-	USB_Send(HID_TX, &id, 1);
+//	USB_Send(HID_TX, &id, 1);
 	USB_Send(HID_TX | TRANSFER_RELEASE,data,len);
 }
 
