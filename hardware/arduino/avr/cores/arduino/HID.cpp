@@ -41,8 +41,43 @@ Keyboard_ Keyboard;
 #define RAWHID_TX_SIZE 64
 #define RAWHID_RX_SIZE 64
 
-extern const u8 _hidReportDescriptor[] PROGMEM;
-const u8 _hidReportDescriptor[] = {
+extern int HID_GetDeviceType(); // this needs to exist in the scatch and return 1 for keyboard mode, or 2 for mouse mode
+
+extern const u8 _hidReportDescriptorMouse[] PROGMEM;
+const u8 _hidReportDescriptorMouse[] = {
+	//	Mouse
+    0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)	// 54
+    0x09, 0x02,                    // USAGE (Mouse)
+    0xa1, 0x01,                    // COLLECTION (Application)
+    0x09, 0x01,                    //   USAGE (Pointer)
+    0xa1, 0x00,                    //   COLLECTION (Physical)
+//    0x85, 0x01,                    //     REPORT_ID (1)
+    0x05, 0x09,                    //     USAGE_PAGE (Button)
+    0x19, 0x01,                    //     USAGE_MINIMUM (Button 1)
+    0x29, 0x03,                    //     USAGE_MAXIMUM (Button 3)
+    0x15, 0x00,                    //     LOGICAL_MINIMUM (0)
+    0x25, 0x01,                    //     LOGICAL_MAXIMUM (1)
+    0x95, 0x03,                    //     REPORT_COUNT (3)
+    0x75, 0x01,                    //     REPORT_SIZE (1)
+    0x81, 0x02,                    //     INPUT (Data,Var,Abs)
+    0x95, 0x01,                    //     REPORT_COUNT (1)
+    0x75, 0x05,                    //     REPORT_SIZE (5)
+    0x81, 0x03,                    //     INPUT (Cnst,Var,Abs)
+    0x05, 0x01,                    //     USAGE_PAGE (Generic Desktop)
+    0x09, 0x30,                    //     USAGE (X)
+    0x09, 0x31,                    //     USAGE (Y)
+    0x09, 0x38,                    //     USAGE (Wheel)
+    0x15, 0x81,                    //     LOGICAL_MINIMUM (-127)
+    0x25, 0x7f,                    //     LOGICAL_MAXIMUM (127)
+    0x75, 0x08,                    //     REPORT_SIZE (8)
+    0x95, 0x03,                    //     REPORT_COUNT (3)
+    0x81, 0x06,                    //     INPUT (Data,Var,Rel)
+    0xc0,                          //   END_COLLECTION
+    0xc0,                          // END_COLLECTION
+};
+
+extern const u8 _hidReportDescriptorKeyboard[] PROGMEM;
+const u8 _hidReportDescriptorKeyboard[] = {
 
 	//	Keyboard
     0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)	// 47
@@ -73,35 +108,22 @@ const u8 _hidReportDescriptor[] = {
     0x29, 0x65,                    //   USAGE_MAXIMUM (Keyboard Application)
     0x81, 0x00,                    //   INPUT (Data,Ary,Abs)
     0xc0,                          // END_COLLECTION
-
-#ifdef RAWHID_ENABLED
-	//	RAW HID
-	0x06, LSB(RAWHID_USAGE_PAGE), MSB(RAWHID_USAGE_PAGE),	// 30
-	0x0A, LSB(RAWHID_USAGE), MSB(RAWHID_USAGE),
-
-	0xA1, 0x01,				// Collection 0x01
-    0x85, 0x03,             // REPORT_ID (3)
-	0x75, 0x08,				// report size = 8 bits
-	0x15, 0x00,				// logical minimum = 0
-	0x26, 0xFF, 0x00,		// logical maximum = 255
-
-	0x95, 64,				// report count TX
-	0x09, 0x01,				// usage
-	0x81, 0x02,				// Input (array)
-
-	0x95, 64,				// report count RX
-	0x09, 0x02,				// usage
-	0x91, 0x02,				// Output (array)
-	0xC0					// end collection
-#endif
-
 };
 
-extern const HIDDescriptor _hidInterface PROGMEM;
-const HIDDescriptor _hidInterface =
+
+extern const HIDDescriptor _hidInterfaceKeyboard PROGMEM;
+const HIDDescriptor _hidInterfaceKeyboard =
 {
 	D_INTERFACE(HID_INTERFACE,1,3,1,1),
-	D_HIDREPORT(sizeof(_hidReportDescriptor)),
+	D_HIDREPORT(sizeof(_hidReportDescriptorKeyboard)),
+	D_ENDPOINT(USB_ENDPOINT_IN (HID_ENDPOINT_INT),USB_ENDPOINT_TYPE_INTERRUPT,8,10)
+};
+
+extern const HIDDescriptor _hidInterfaceMouse PROGMEM;
+const HIDDescriptor _hidInterfaceMouse =
+{
+	D_INTERFACE(HID_INTERFACE,1,3,1,2),
+	D_HIDREPORT(sizeof(_hidReportDescriptorMouse)),
 	D_ENDPOINT(USB_ENDPOINT_IN (HID_ENDPOINT_INT),USB_ENDPOINT_TYPE_INTERRUPT,8,10)
 };
 
@@ -117,12 +139,14 @@ u8 _hid_idle = 1;
 int WEAK HID_GetInterface(u8* interfaceNum)
 {
 	interfaceNum[0] += 1;	// uses 1
-	return USB_SendControl(TRANSFER_PGM,&_hidInterface,sizeof(_hidInterface));
+	if (HID_GetDeviceType() == 1) return USB_SendControl(TRANSFER_PGM,&_hidInterfaceKeyboard,sizeof(_hidInterfaceKeyboard));
+	else return USB_SendControl(TRANSFER_PGM,&_hidInterfaceMouse,sizeof(_hidInterfaceMouse));
 }
 
 int WEAK HID_GetDescriptor(int /* i */)
 {
-	return USB_SendControl(TRANSFER_PGM,_hidReportDescriptor,sizeof(_hidReportDescriptor));
+	if (HID_GetDeviceType() == 1) return USB_SendControl(TRANSFER_PGM,_hidReportDescriptorKeyboard,sizeof(_hidReportDescriptorKeyboard));
+	else return USB_SendControl(TRANSFER_PGM,_hidReportDescriptorMouse,sizeof(_hidReportDescriptorMouse));
 }
 
 void WEAK HID_SendReport(u8 id, const void* data, int len)
